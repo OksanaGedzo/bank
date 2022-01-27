@@ -72,6 +72,13 @@ public class BankController {
 
         return accountService.updateOwnerDetails(bank.getAccounts(), accountDto);
     }
+     //todo tte endpoit; millega saad konto lukustada/ avada- Kontrolli ID olemasolu.
+
+    @DeleteMapping("/delete/account")
+    public RequestResult deleteAccount(@RequestParam int accountId) {
+        return  accountService.deleteAccount(bank.getAccounts(), accountId);
+
+    }
 
 
 
