@@ -78,6 +78,7 @@ public class TransactionService {
 
         // töötleme läbi erinevad olukorrad
         int newBalance;
+        String receiverAccountNumber;
 
 
         switch (transactionType) {
@@ -137,7 +138,6 @@ public class TransactionService {
                 newBalance = balance - amount;
 
 
-
                 // täidame ära transactionDto
                 transactionDto.setSenderAccountNumber(account.getAccountNumber());
                 transactionDto.setReceiverAccountNumber(ATM);
@@ -158,6 +158,39 @@ public class TransactionService {
                 requestResult.setMessage("Successfully made withdrawal transaction");
                 return requestResult;
 
+            case RECEIVE_MONEY:
+                receiverAccountNumber = transactionDto.getReceiverAccountNumber();
+                if (!accountService.accountNumberExists(accounts, receiverAccountNumber)) {
+                    requestResult.setTransactionId(transactionId);
+                    requestResult.setAccountId(accountId);
+                    requestResult.setError("No such account number exists");
+                    return requestResult;
+                }
+
+                AccountDto receiverAccount = accountService.getAccountByNumber(accounts, receiverAccountNumber);
+
+                newBalance = balance + amount;
+
+                //teeme valmis transaktsiooni
+                transactionDto.setBalance(newBalance);
+                transactionDto.setSenderAccountNumber(ATM);
+                transactionDto.setReceiverAccountNumber(account.getAccountNumber());
+                transactionDto.setLocalDateTime(LocalDateTime.now());
+                transactionDto.setId(transactionId);
+
+                //lisame transactsiooni banka ja inkrementeerimime
+                bank.addTransactionToTransactions(transactionDto);
+                bank.incrementTransactionId();
+
+                //accoundis uue raha sättimine
+                account.setBalance(newBalance);
+
+                //result objekti valmistamine ning saatmine
+                requestResult.setTransactionId(transactionId);
+                requestResult.setAccountId(accountId);
+                requestResult.setMessage("Successfully deposited " + amount);
+                return requestResult;
+
 
             default:
                 requestResult.setError("Unknown transaction type: " + transactionType);
@@ -166,15 +199,16 @@ public class TransactionService {
         }
 
     }
-
-
-    // TODO:    createTransactionForNewAccount()
-    //  account number
-    //  balance 0
-    //  amount 0
-    //  transactionType 'n'
-    //  receiver jääb null
-    //  sender jääb null
-
-
 }
+
+
+// TODO:    createTransactionForNewAccount()
+//  account number
+//  balance 0
+//  amount 0
+//  transactionType 'n'
+//  receiver jääb null
+//  sender jääb null
+
+
+
