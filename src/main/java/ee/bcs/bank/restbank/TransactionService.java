@@ -78,6 +78,7 @@ public class TransactionService {
 
         // töötleme läbi erinevad olukorrad
         int newBalance;
+        String receiverAccountNumber;
 
 
         switch (transactionType) {
@@ -137,7 +138,6 @@ public class TransactionService {
                 newBalance = balance - amount;
 
 
-
                 // täidame ära transactionDto
                 transactionDto.setSenderAccountNumber(account.getAccountNumber());
                 transactionDto.setReceiverAccountNumber(ATM);
@@ -158,23 +158,111 @@ public class TransactionService {
                 requestResult.setMessage("Successfully made withdrawal transaction");
                 return requestResult;
 
+            case SEND_MONEY:
+
+                if (!balanceService.enoughMoneyOnAccount(balance, amount)) {
+                    requestResult.setTransactionId(transactionId);
+                    requestResult.setAccountId(accountId);
+                    requestResult.setError("Not enough money to withdraw " + amount);
+                    break;
+                }
+
+                newBalance = balance - amount;
+                //SAATJA POOL
+                //teeme valmis transaktsiooni
+                transactionDto.setBalance(newBalance);
+                transactionDto.setSenderAccountNumber(account.getAccountNumber());
+                transactionDto.setLocalDateTime(LocalDateTime.now());
+                transactionDto.setId(transactionId);
+
+                //lisame transactsiooni banka ja inkrementeerimime
+                bank.addTransactionToTransactions(transactionDto);
+                bank.incrementTransactionId();
+
+                //accoundis uue raha sättimine
+                account.setBalance(newBalance);
+
+                //result objekti valmistamine ning saatmine
+                requestResult.setTransactionId(transactionId);
+                requestResult.setAccountId(accountId);
+                requestResult.setMessage("Successfully sent " + amount);
+
+                receiverAccountNumber = transactionDto.getReceiverAccountNumber();
+                //kas saaaja on meie bank accountsis
+                if (accountService.accountNumberExists(accounts, receiverAccountNumber)) {
+                    //VASTUVÕTJA / SAAJA POOL
+                    //teeme valmis transaktsiooni
+
+                    AccountDto receiverAccount = accountService.getAccountByNumber(accounts, receiverAccountNumber);
+                    int receiverNewBalance = receiverAccount.getBalance() + amount;
+
+                    TransactionDto receiverTransactionDto = new TransactionDto();
+                    receiverTransactionDto.setSenderAccountNumber(account.getAccountNumber());
+                    receiverTransactionDto.setReceiverAccountNumber(receiverAccountNumber);
+                    receiverTransactionDto.setBalance(receiverNewBalance);
+                    receiverTransactionDto.setLocalDateTime(LocalDateTime.now());
+                    receiverTransactionDto.setId(bank.getTransactionIdCount());
+                    receiverTransactionDto.setAmount(amount);
+                    receiverTransactionDto.setTransactionType(RECEIVE_MONEY);
+
+                    bank.incrementTransactionId();
+                    bank.addTransactionToTransactions(receiverTransactionDto);
+
+                    receiverAccount.setBalance(receiverNewBalance);
+                }
+                return requestResult;
+
 
             default:
                 requestResult.setError("Unknown transaction type: " + transactionType);
                 return requestResult;
 
         }
+        return requestResult;
+
+    }
+
+    public RequestResult receiveNewTransaction(Bank bank, TransactionDto transactionDto) {
+
+        RequestResult requestResult = new RequestResult();
+        String receiverAccountNumber = transactionDto.getReceiverAccountNumber();
+        List<AccountDto> accounts = bank.getAccounts();
+
+        if (!accountService.accountNumberExists(accounts, receiverAccountNumber)) {
+            requestResult.setError("No such account in our bank;" + receiverAccountNumber);
+            return requestResult;
+
+        }
+        AccountDto receiverAccount = accountService.getAccountByNumber(accounts, receiverAccountNumber);
+        int transactionId = bank.getTransactionIdCount();
+        int receiverNewBalance = receiverAccount.getBalance() + transactionDto.getAmount();
+
+        transactionDto.setTransactionType(RECEIVE_MONEY);
+        transactionDto.setBalance(receiverNewBalance);
+        transactionDto.setId(transactionId);
+        transactionDto.setAccountId(receiverAccount.getId());
+        transactionDto.setLocalDateTime(LocalDateTime.now());
+
+        bank.addTransactionToTransactions(transactionDto);
+        bank.incrementTransactionId();
+
+        receiverAccount.setBalance(receiverNewBalance);
+        requestResult.setTransactionId(transactionId);
+        requestResult.setMessage("Transaction receive");
+
+        return requestResult;
+
 
     }
 
 
-    // TODO:    createTransactionForNewAccount()
-    //  account number
-    //  balance 0
-    //  amount 0
-    //  transactionType 'n'
-    //  receiver jääb null
-    //  sender jääb null
+// TODO:    createTransactionForNewAccount()
+//  account number
+//  balance 0
+//  amount 0
+//  transactionType 'n'
+//  receiver jääb null
+//  sender jääb null
 
 
 }

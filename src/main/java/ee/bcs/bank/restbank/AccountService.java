@@ -25,6 +25,25 @@ public class AccountService {
         return accountDto;
     }
 
+    public boolean accountNumberExists(List<AccountDto> accounts, String receiverAccountNumber) {
+        for (AccountDto accountDto : accounts
+        ) {
+            if (accountDto.getAccountNumber().equals(receiverAccountNumber))
+                return true;
+        }
+        return false;
+    }
+    public AccountDto getAccountByNumber(List<AccountDto> accounts, String receiverAccountNumber) {
+        for (AccountDto accountDto : accounts
+        ) {
+            if (accountDto.getAccountNumber().equals(receiverAccountNumber))
+                return accountDto;
+        }
+        return null;
+    }
+
+
+
     private String createRandomAccountNumber() {
     //  Creates random account number between EE1000 -  EE9999
         Random random = new Random();
