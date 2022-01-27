@@ -217,12 +217,42 @@ public class TransactionService {
                 requestResult.setError("Unknown transaction type: " + transactionType);
                 return requestResult;
 
-        }return requestResult;
+        }
+        return requestResult;
 
     }
 
     public RequestResult receiveNewTransaction(Bank bank, TransactionDto transactionDto) {
-        return null;
+
+        RequestResult requestResult = new RequestResult();
+        String receiverAccountNumber = transactionDto.getReceiverAccountNumber();
+        List<AccountDto> accounts = bank.getAccounts();
+
+        if (!accountService.accountNumberExists(accounts, receiverAccountNumber)) {
+            requestResult.setError("No such account in our bank;" + receiverAccountNumber);
+            return requestResult;
+
+        }
+        AccountDto receiverAccount = accountService.getAccountByNumber(accounts, receiverAccountNumber);
+        int transactionId = bank.getTransactionIdCount();
+        int receiverNewBalance = receiverAccount.getBalance() + transactionDto.getAmount();
+
+        transactionDto.setTransactionType(RECEIVE_MONEY);
+        transactionDto.setBalance(receiverNewBalance);
+        transactionDto.setId(transactionId);
+        transactionDto.setAccountId(receiverAccount.getId());
+        transactionDto.setLocalDateTime(LocalDateTime.now());
+
+        bank.addTransactionToTransactions(transactionDto);
+        bank.incrementTransactionId();
+
+        receiverAccount.setBalance(receiverNewBalance);
+        requestResult.setTransactionId(transactionId);
+        requestResult.setMessage("Transaction receive");
+
+        return requestResult;
+
+
     }
 
 
