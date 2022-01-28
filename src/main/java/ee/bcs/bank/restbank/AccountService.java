@@ -88,7 +88,7 @@ public class AccountService {
 
         requestResult.setAccountId(accountId);
         requestResult.setMessage("Sucsessefyly updated account");
-        return  requestResult;
+        return requestResult;
 
 
     }
@@ -109,7 +109,25 @@ public class AccountService {
         requestResult.setMessage("Account deleted");
         requestResult.setAccountId(accountId);
 
-        return  requestResult;
+        return requestResult;
+    }
 
+    public RequestResult LockUnlockAccount(List<AccountDto> accounts, int accountId) {
+
+        RequestResult requestResult = new RequestResult();
+
+
+        if (!accountIdExist(accounts, accountId)) {
+            requestResult.setError("Sorry. Account " + accountId + "  dont exist");
+            return requestResult;
+        }
+        AccountDto account = getAccountById(accounts, accountId);
+        Boolean lockedStatus = account.getLocked();
+        account.setLocked(!lockedStatus);
+
+        requestResult.setMessage("Congratulations! Account unlock " + account.getLocked());
+        requestResult.setAccountId(accountId);
+
+        return requestResult;
     }
 }

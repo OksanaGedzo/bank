@@ -35,6 +35,8 @@ public class BankController {
         return accountService.createExampleAccount();
     }
 
+
+
     // TODO: et saada üks transaction JSON'i näidis,
     //  siis loo uus controlleri endpoint               /example/transaction
     //  meetodi nimeks pane                             getExampleTransaction()
@@ -72,7 +74,17 @@ public class BankController {
 
         return accountService.updateOwnerDetails(bank.getAccounts(), accountDto);
     }
+
+
      //todo tte endpoit; millega saad konto lukustada/ avada- Kontrolli ID olemasolu.
+     //lock/status
+
+    @PutMapping("/lock/unlock/account")
+    public RequestResult lockUnlockAccount (@RequestParam int accountId) {
+        return accountService.LockUnlockAccount(bank.getAccounts(), accountId);
+
+
+    }
 
     @DeleteMapping("/delete/account")
     public RequestResult deleteAccount(@RequestParam int accountId) {
